@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
 
 interface Product {
   id: number;
@@ -231,11 +231,11 @@ export function useFavorites() {
 export function useProducts() {
   const { state, dispatch } = useApp();
 
-  const setProducts = (products: Product[]) => {
+  const setProducts = useCallback((products: Product[]) => {
     dispatch({ type: 'SET_PRODUCTS', payload: products });
-  };
+  }, [dispatch]);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const { apiService } = await import('../services/apiService');
@@ -246,9 +246,9 @@ export function useProducts() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [dispatch]);
 
-  const loadProductsByCategory = async (category: string) => {
+  const loadProductsByCategory = useCallback(async (category: string) => {
     if (category === 'all') {
       return loadProducts();
     }
@@ -263,9 +263,9 @@ export function useProducts() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [dispatch, loadProducts]);
 
-  const searchProducts = async (query: string) => {
+  const searchProducts = useCallback(async (query: string) => {
     if (!query.trim()) {
       return loadProducts();
     }
@@ -280,9 +280,17 @@ export function useProducts() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [dispatch, loadProducts]);
 
-  const getFilteredProducts = () => {
+  const setCategory = useCallback((category: string) => {
+    dispatch({ type: 'SET_CATEGORY', payload: category });
+  }, [dispatch]);
+
+  const setSearchTerm = useCallback((term: string) => {
+    dispatch({ type: 'SET_SEARCH_TERM', payload: term });
+  }, [dispatch]);
+
+  const getFilteredProducts = useCallback(() => {
     let filtered = state.products;
 
     if (state.selectedCategory !== 'all') {
@@ -298,12 +306,12 @@ export function useProducts() {
     }
 
     return filtered;
-  };
+  }, [state.products, state.selectedCategory, state.searchTerm]);
 
-  const getCategories = () => {
+  const getCategories = useCallback(() => {
     const categories = state.products.map(product => product.category);
     return ['all', ...Array.from(new Set(categories))];
-  };
+  }, [state.products]);
 
   return {
     products: state.products,
@@ -316,19 +324,19 @@ export function useProducts() {
     loadProducts,
     loadProductsByCategory,
     searchProducts,
-    setCategory: (category: string) => dispatch({ type: 'SET_CATEGORY', payload: category }),
-    setSearchTerm: (term: string) => dispatch({ type: 'SET_SEARCH_TERM', payload: term }),
+    setCategory,
+    setSearchTerm,
   };
 }
 
 export function useUsers() {
   const { state, dispatch } = useApp();
 
-  const setUsers = (users: User[]) => {
+  const setUsers = useCallback((users: User[]) => {
     dispatch({ type: 'SET_USERS', payload: users });
-  };
+  }, [dispatch]);
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const { apiService } = await import('../services/apiService');
@@ -339,9 +347,9 @@ export function useUsers() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [dispatch]);
 
-  const searchUsers = async (query: string) => {
+  const searchUsers = useCallback(async (query: string) => {
     if (!query.trim()) {
       return loadUsers();
     }
@@ -356,7 +364,7 @@ export function useUsers() {
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
-  };
+  }, [dispatch, loadUsers]);
 
   return {
     users: state.users,
